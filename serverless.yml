@@ -1,0 +1,27 @@
+service: serverless-document-processor
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: us-east-1
+
+functions:
+  http:
+    handler: src/infrastructure/lambda/http.handler
+    events:
+      - httpApi:
+          path: /documents
+          method: POST
+
+      - httpApi:
+          path: /documents/{id}
+          method: GET
+
+      - httpApi:
+          path: /documents/{id}
+          method: DELETE
+
+plugins:
+  - serverless-offline
