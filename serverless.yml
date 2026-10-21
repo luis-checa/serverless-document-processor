@@ -7,6 +7,18 @@ provider:
   runtime: nodejs22.x
   region: us-east-1
 
+  environment:
+    DOCUMENTS_BUCKET: ${env:DOCUMENTS_BUCKET}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::${env:DOCUMENTS_BUCKET}/*
+
 functions:
   http:
     handler: src/infrastructure/lambda/http.handler
