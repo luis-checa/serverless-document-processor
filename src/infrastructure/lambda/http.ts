@@ -10,6 +10,7 @@ import { DeleteDocumentUseCase } from "../../modules/documents/application/use-c
 import { InMemoryDocumentRepository } from "../../modules/documents/infrastructure/repositories/in-memory-document.repository";
 import { DocumentController } from "../../modules/documents/presentation/http/document.controller";
 import { DocumentRoutes } from "../../modules/documents/presentation/http/document.routes";
+import { handleHttpError } from "../http/error-handler";
 
 const documentRepository = new InMemoryDocumentRepository();
 const documentStorage = new S3DocumentStorage();
@@ -29,16 +30,6 @@ export async function handler(
   try {
     return await documentRoutes.handle(event);
   } catch (error) {
-    console.error("Unhandled HTTP handler error:", error);
-
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "Internal server error",
-      }),
-    };
+    return handleHttpError(error);
   }
 }
