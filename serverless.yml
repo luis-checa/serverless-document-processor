@@ -9,6 +9,7 @@ provider:
 
   environment:
     DOCUMENTS_BUCKET: ${env:DOCUMENTS_BUCKET}
+    DOCUMENTS_TOPIC_ARN: ${env:DOCUMENTS_TOPIC_ARN}
 
   iam:
     role:
