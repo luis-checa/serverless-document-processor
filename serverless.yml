@@ -19,9 +19,24 @@ provider:
           Resource:
             - arn:aws:s3:::${env:DOCUMENTS_BUCKET}/*
 
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource:
+            - arn:aws:s3:::${env:DOCUMENTS_BUCKET}/*
+
+        - Effect: Allow
+          Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - Fn::GetAtt: [DocumentQueue, Arn]
+
 functions:
   http:
     handler: src/infrastructure/lambda/http.handler
+    timeout: 10
     events:
       - httpApi:
           path: /documents
@@ -35,5 +50,50 @@ functions:
           path: /documents/{id}
           method: DELETE
 
+  documentWorker:
+    handler: src/infrastructure/lambda/document-worker.handler
+    timeout: 30
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [DocumentQueue, Arn]
+          batchSize: 1
 plugins:
   - serverless-offline
+
+resources:
+  Resources:
+    DocumentDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}-documents-dlq
+
+    DocumentQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}-documents
+        VisibilityTimeout: 180
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [DocumentDeadLetterQueue, Arn]
+          maxReceiveCount: 3
+
+    DocumentQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: DocumentQueue
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: s3.amazonaws.com
+              Action: sqs:SendMessage
+              Resource:
+                Fn::GetAtt: [DocumentQueue, Arn]
+              Condition:
+                ArnLike:
+                  aws:SourceArn: arn:aws:s3:::${env:DOCUMENTS_BUCKET}
+                StringEquals:
+                  aws:SourceAccount: ${aws:accountId}
