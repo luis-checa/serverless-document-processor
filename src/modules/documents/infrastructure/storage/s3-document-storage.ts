@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { env } from "../../../../infrastructure/config/env";
 
 const s3Client = new S3Client({});
 
@@ -7,7 +8,7 @@ export class S3DocumentStorage {
   private readonly bucket: string;
 
   constructor() {
-    const bucket = process.env.DOCUMENTS_BUCKET;
+    const bucket = env.documentsBucket;
 
     if (!bucket) {
       throw new Error("DOCUMENTS_BUCKET is not configured");
